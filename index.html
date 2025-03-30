@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who Wants to Be a Millionaire</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+      margin: 0;
+      text-align: center;
+    }
+    .game-container {
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      width: 600px;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    .question img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .answer-button {
+      background-color: #ffffff30;
+      color: #fff;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      margin: 10px 0;
+      cursor: pointer;
+      font-size: 18px;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    .answer-button:hover {
+      background-color: #ffffff50;
+    }
+    .answer-button.correct {
+      background-color: #28a745;
+    }
+    .answer-button.wrong {
+      background-color: #dc3545;
+    }
+    .next-button {
+      margin-top: 20px;
+      background-color: #ff9800;
+      color: #fff;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: none;
+    }
+    .start-button {
+      margin-top: 50px;
+      background-color: #ff9800;
+      color: #fff;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .end-screen {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container" id="game-container">
+  <h1>Ölkə bayraqları</h1>
+  <button id="start-btn" class="start-button">Oyuna Başla</button>
+  <div id="question" class="question"> </div>
+  <div id="answers"></div>
+  <button id="next-btn" class="next-button">Növbəti sual</button>
+  <div id="end-screen" class="end-screen" style="display: none;">
+    <h2>Oyun bitdi!</h2>
+    <div id="correct-answers"></div>
+    <div id="wrong-answers"></div>
+    <button id="restart-btn" class="start-button">Yenidən başla</button>
+  </div>
+</div>
+
+<audio id="correct-sound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+<audio id="wrong-sound" src="https://www.soundjay.com/button/beep-09.wav" preload="auto"></audio>
+
+<script>
+  const questions = [
+    {
+      image: "https://www.countryflags.com/wp-content/uploads/flag-jpg-xl-11-1536x768.jpg", // Replace with a valid image URL
+      answers: [
+        { text: "Azərbaycan", correct: true },
+        { text: "Gürcüstan", correct: false },
+        { text: "Türkiyə", correct: false },
+        { text: "Qazaxstan", correct: false }
+      ]
+    },
+     {
+      image: "https://www.countryflags.com/wp-content/uploads/cameroon-flag-png-large.png", // Replace with a valid image URL
+      answers: [
+        { text: "Somali", correct: false },
+        { text: "Kamerun", correct: true },
+        { text: "Efiopiya", correct: false },
+        { text: "Sudan", correct: false }
+      ]
+    },
+     {
+      image: "https://www.countryflags.com/wp-content/uploads/canada-flag-png-large.png", // Replace with a valid image URL
+      answers: [
+        { text: "Kanada", correct: true },
+        { text: "İrlandiya", correct: false },
+        { text: "Norveç", correct: false },
+        { text: "Meksika", correct: false }
+      ]
+    },
+    {
+      image: "https://www.countryflags.com/wp-content/uploads/kenya-flag-png-large.png", // Replace with a valid image URL
+      answers: [
+        { text: "Somali", correct: false },
+        { text: "Keniya", correct: true },
+        { text: "Namibiya", correct: false },
+        { text: "Uqanda", correct: false }
+      ]
+    },
+    {
+      image: "https://www.countryflags.com/wp-content/uploads/spain-flag-png-large.png", // Replace with a valid image URL
+      answers: [
+        { text: "İspaniya", correct: true },
+        { text: "İtaliya", correct: false },
+        { text: "Fransa", correct: false },
+        { text: "Portuqaliya", correct: false }
+      ]
+    }
+    // Add more questions with images here
+  ];
+
+  let currentQuestionIndex = 0;
+  let correctAnswersCount = 0;
+  let wrongAnswersCount = 0;
+
+  const startButton = document.getElementById('start-btn');
+  const questionElement = document.getElementById('question');
+  const answersElement = document.getElementById('answers');
+  const nextButton = document.getElementById('next-btn');
+  const endScreen = document.getElementById('end-screen');
+  const correctAnswersElement = document.getElementById('correct-answers');
+  const wrongAnswersElement = document.getElementById('wrong-answers');
+  const restartButton = document.getElementById('restart-btn');
+
+  function startGame() {
+    startButton.style.display = "none"; // Hide the start button
+    endScreen.style.display = "none"; // Hide the end screen
+    showQuestion();
+  }
+
+  function showQuestion() {
+    resetState();
+    const currentQuestion = questions[currentQuestionIndex];
+    
+    // Check if image exists
+    if (currentQuestion.image) {
+      questionElement.innerHTML = `<img src="${currentQuestion.image}" alt="Question Image" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400?text=Image+Not+Found';">`;
+    } else {
+      questionElement.textContent = "Image not available!";
+    }
+
+    currentQuestion.answers.forEach(answer => {
+      const button = document.createElement('button');
+      button.textContent = answer.text;
+      button.classList.add('answer-button');
+      button.addEventListener('click', () => selectAnswer(button, answer));
+      answersElement.appendChild(button);
+    });
+  }
+
+  function resetState() {
+    nextButton.style.display = "none";
+    while (answersElement.firstChild) {
+      answersElement.removeChild(answersElement.firstChild);
+    }
+  }
+
+  function selectAnswer(button, answer) {
+    if (answer.correct) {
+      button.classList.add('correct');
+      correctAnswersCount++;
+    } else {
+      button.classList.add('wrong');
+      wrongAnswersCount++;
+    }
+
+    Array.from(answersElement.children).forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === answer.text && answer.correct) {
+        btn.classList.add('correct');
+      }
+    });
+
+    nextButton.style.display = "block";
+  }
+
+  function nextQuestion() {
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex++;
+      showQuestion();
+    } else {
+      showEndScreen();
+    }
+  }
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function startGame() {
+  shuffleArray(questions); // Randomize question order
+  currentQuestionIndex = 0;
+  correctAnswersCount = 0;
+  wrongAnswersCount = 0;
+  startButton.style.display = "none";
+  endScreen.style.display = "none";
+  questionElement.style.display = "block";
+  answersElement.style.display = "block";
+  showQuestion();
+}
+  function showEndScreen() {
+    questionElement.style.display = "none";
+    answersElement.style.display = "none";
+    nextButton.style.display = "none";
+
+    correctAnswersElement.textContent = `Düzgün cavablar: ${correctAnswersCount}`;
+    wrongAnswersElement.textContent = `Səhv cavablar: ${wrongAnswersCount}`;
+    endScreen.style.display = "block";
+  }
+
+  function restartGame() {
+    currentQuestionIndex = 0;
+    correctAnswersCount = 0;
+    wrongAnswersCount = 0;
+    questionElement.style.display = "block";
+    answersElement.style.display = "block";
+    startGame();
+  }
+
+  startButton.addEventListener('click', startGame);
+  nextButton.addEventListener('click', nextQuestion);
+  restartButton.addEventListener('click', restartGame);
+
+</script>
+
+</body>
+</html>
